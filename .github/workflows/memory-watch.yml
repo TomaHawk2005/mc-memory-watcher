@@ -1,0 +1,25 @@
+name: Minecraft memory watcher
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # every 5 min (GitHub may run it a few minutes late)
+  workflow_dispatch:         # lets you run it by hand from the Actions tab
+
+concurrency:
+  group: memory-watch
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check memory and restart if needed
+        env:
+          BISECT_API_KEY: ${{ secrets.BISECT_API_KEY }}
+          MEMORY_LIMIT_GB: "5.7"
+        run: python watcher.py
