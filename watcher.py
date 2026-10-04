@@ -12,6 +12,7 @@ import json
 import os
 import sys
 import time
+import urllib.error
 import urllib.request
 
 PANEL = os.environ.get("PANEL_URL", "https://games.bisecthosting.com")
@@ -35,11 +36,17 @@ def api(method, path, body=None):
             "Authorization": f"Bearer {API_KEY}",
             "Accept": "application/json",
             "Content-Type": "application/json",
+            # The panel's firewall blocks Python's default "Python-urllib" user agent.
+            "User-Agent": "Mozilla/5.0 (mc-memory-watcher; +https://github.com/TomaHawk2005/mc-memory-watcher)",
         },
     )
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        raw = resp.read()
-        return json.loads(raw) if raw else {}
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            raw = resp.read()
+            return json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as e:
+        body = e.read().decode(errors="replace")[:500]
+        sys.exit(f"Panel returned HTTP {e.code} for {method} {path}: {body}")
 
 
 def say(msg):
